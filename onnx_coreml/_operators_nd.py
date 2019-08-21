@@ -774,8 +774,19 @@ def _convert_instancenorm(builder, node, graph, err):  # type: (NeuralNetworkBui
     if node.inputs[1] not in node.input_tensors or node.inputs[2] not in node.input_tensors:
         return err.unsupported_op_configuration(builder, node, graph, "CoreML InstanceNorm requires Scale and Bias to be known")
     
+
     scale = node.input_tensors[node.inputs[1]]
     bias = node.input_tensors[node.inputs[2]]
+
+    #### BEGIN EDIT ######    
+    channels = graph.shape_dict[node.inputs[1]][0] # Scalar Int
+
+    # mean, var not used if `compute_mean_var=True`
+    mean = None
+    var = None
+    #### END EDIT ######
+
+
 
     if node.inputs[0] not in graph.shape_dict:
         return err.unsupported_op_configuration(builder, node, graph, "Shape of input unknown")
@@ -785,12 +796,12 @@ def _convert_instancenorm(builder, node, graph, err):  # type: (NeuralNetworkBui
     # Rank 2 BN is mapped to Rank 3 BN
     if rank == 3:
         # 1D Batch Norm
-        add_bn_with_expansion(builder, node, err, node.name, channels[0], scale, bias, mean, var,
+        add_bn_with_expansion(builder, node, err, node.name, channels, scale, bias, mean, var,
                               node.inputs[0], node.outputs[0], epsilon, compute_mean_var=True,
                               instance_normalization=True, axes_for_expansion=[0, 3])
     elif rank == 4:
         # 2D Batch Norm
-        add_bn_with_expansion(builder, node, err, node.name, channels[0], scale, bias, mean, var,
+        add_bn_with_expansion(builder, node, err, node.name, channels, scale, bias, mean, var,
                               node.inputs[0], node.outputs[0], epsilon, compute_mean_var=True,
                               instance_normalization=True, axes_for_expansion=[])
     else:
