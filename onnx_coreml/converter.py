@@ -33,13 +33,14 @@ from .graph_viz import plot_graph # type: ignore
 
 USE_SHAPE_MAPPING = True
 
-DEBUG = False
+DEBUG = True
 
 '''
 inputs: list of tuples.
       [Tuple]: [(name, type, shape)]
 '''
 def _make_coreml_input_features(graph, onnx_coreml_input_shape_map, disable_coreml_rank5_mapping=False): # type: (...) -> Sequence[Tuple[Text, datatypes.Array]]
+    print('_make_coreml_input_features')
     '''
     If "disable_coreml_rank5_mapping" is False, then:
 
@@ -484,11 +485,16 @@ def convert(model,  # type: Union[onnx.ModelProto, Text]
     #Make CoreML input and output features by gathering shape info and
     #interpreting it for CoreML
     input_features = _make_coreml_input_features(graph, onnx_coreml_input_shape_map, disable_coreml_rank5_mapping)
+
+    if DEBUG: print('Collected input_features: ', input_features)
+    
     if len( image_output_names) > 0:
         output_features = _make_coreml_output_features(graph, forceShape=True, disable_coreml_rank5_mapping=disable_coreml_rank5_mapping)
     else:
         output_features = _make_coreml_output_features(graph, disable_coreml_rank5_mapping=disable_coreml_rank5_mapping)
 
+    if DEBUG: print('COLLEcTED output_features: ', output_features)
+    
     builder = NeuralNetworkBuilder(input_features, output_features, mode=mode, disable_rank5_shape_mapping=disable_coreml_rank5_mapping)
 
     '''
@@ -516,19 +522,21 @@ def convert(model,  # type: Union[onnx.ModelProto, Text]
 
 
     if len(image_input_names) > 0:
+        print('SETTING IMAGE INPUT NAMES')
         builder.set_pre_processing_parameters(
             image_input_names=image_input_names,
-            is_bgr=preprocessing_args.get('is_bgr', False),
-            red_bias=preprocessing_args.get('red_bias', 0.0),
-            green_bias=preprocessing_args.get('green_bias', 0.0),
-            blue_bias=preprocessing_args.get('blue_bias', 0.0),
-            gray_bias=preprocessing_args.get('gray_bias', 0.0),
-            image_scale=preprocessing_args.get('image_scale', 1.0)
+            # is_bgr=preprocessing_args.get('is_bgr', False),
+            # red_bias=preprocessing_args.get('red_bias', 0.0),
+            # green_bias=preprocessing_args.get('green_bias', 0.0),
+            # blue_bias=preprocessing_args.get('blue_bias', 0.0),
+            # gray_bias=preprocessing_args.get('gray_bias', 0.0),
+            # image_scale=preprocessing_args.get('image_scale', 1.0)
         )
 
     preprocessing_args.clear()
 
     if len(image_output_names) > 0:
+        print('SETTING IMAGE OUTPUT NAMES')
         for f in output_features:
             f_name = f[0]
             if f_name in image_output_names:

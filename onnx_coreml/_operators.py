@@ -1604,6 +1604,7 @@ def _convert_reorganize_data(builder, node, graph, err):  # type: (NeuralNetwork
     _update_shape_mapping_unchanged(node, graph, err)
 
 def _convert_upsample(builder, node, graph, err):  # type: (NeuralNetworkBuilder, Node, Graph, ErrorHandling) -> None
+    default_scales = np.array([1,1,2,2])
     if 'scales' in node.attrs:
         scales = node.attrs["scales"]
         if len(scales) != 4 or scales[0] != 1.0 or scales[1] != 1.0:
@@ -1616,11 +1617,17 @@ def _convert_upsample(builder, node, graph, err):  # type: (NeuralNetworkBuilder
         height_scale = int(scales[2])
         width_scale = int(scales[3])
     else:
-        if len(node.inputs) > 1:
-            return err.unsupported_op_configuration(builder, node, graph,
-                                                    "This ONNX upsample layer has 'scales' provided as an input. CoreML upsample requires 'scales' as an attribute of the layer.")
-        height_scale = int(node.attrs.get('height_scale', 1))
-        width_scale = int(node.attrs.get('width_scale', 1))
+        print('APPLYING DEFAULT UPSAMPLE SCALES of (1,1,2,2)')
+        scales = default_scales
+        if len(scales) != 4 or scales[0] != 1.0 or scales[1] != 1.0:
+            err.unsupported_op_configuration(builder, node, graph, "Unsupported scales {} for upsample".format(scales))
+        height_scale = int(scales[2])
+        width_scale = int(scales[3])
+        # if len(node.inputs) > 1:
+        #     return err.unsupported_op_configuration(builder, node, graph,
+        #                                             "This ONNX upsample layer has 'scales' provided as an input. CoreML upsample requires 'scales' as an attribute of the layer.")
+        # height_scale = int(node.attrs.get('height_scale', 1))
+        # width_scale = int(node.attrs.get('width_scale', 1))
     mode_convert = {
         "nearest": "NN",
         "linear": "BILINEAR",
